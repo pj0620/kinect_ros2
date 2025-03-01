@@ -48,24 +48,29 @@ Visualization Manager:
       Plane Cell Count: 10
       Reference Frame: <Fixed Frame>
       Value: true
-    - Class: rviz_default_plugins/Camera
+    # - Class: rviz_default_plugins/Camera
+    #   Enabled: true
+    #   Image Rendering: background and overlay
+    #   Name: Camera
+    #   Overlay Alpha: 0.5
+    #   Topic:
+    #     Depth: 5
+    #     Durability Policy: Volatile
+    #     Filter size: 10
+    #     History Policy: Keep Last
+    #     Reliability Policy: Reliable
+    #     Value: /kinect/depth/image_raw
+    #   Value: true
+    #   Visibility:
+    #     Grid: true
+    #     PointCloud2: true
+    #     Value: true
+    #   Zoom Factor: 1
+    - Class: rviz_default_plugins/Image
       Enabled: true
-      Image Rendering: background and overlay
-      Name: Camera
-      Overlay Alpha: 0.5
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        Filter size: 10
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /kinect/depth/image_raw
-      Value: true
-      Visibility:
-        Grid: true
-        PointCloud2: true
-        Value: true
-      Zoom Factor: 1
+      Name: Depth Image
+      Topic: /kinect/depth/image_raw
+      Transport Hint: raw
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:

@@ -47,10 +47,12 @@ int main(int argc, char * argv[])
   options.use_intra_process_comms(true);
 
   auto kinect_component = std::make_shared<kinect_ros2::KinectRosComponent>(options);
-  auto depth_image_proc_component = get_depth_image_proc_component();
+  // auto depth_image_proc_component = get_depth_image_proc_component();
 
   exec.add_node(kinect_component);
-  exec.add_node(depth_image_proc_component);
+
+  // Moving this to server
+  // exec.add_node(depth_image_proc_component);
 
   exec.spin();
 
