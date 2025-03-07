@@ -17,7 +17,7 @@ static bool _rgb_flag;
 KinectRosComponent::KinectRosComponent(const rclcpp::NodeOptions & options)
 : Node("kinect_ros2", options)
 {
-  timer_ = create_wall_timer(250ms, std::bind(&KinectRosComponent::timer_callback, this));
+  timer_ = create_wall_timer(100ms, std::bind(&KinectRosComponent::timer_callback, this));
   
   std::string pkg_share = ament_index_cpp::get_package_share_directory("kinect_ros2");
 
