@@ -1,6 +1,8 @@
 #include "kinect_ros2/kinect_ros2_component.hpp"
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #include <sys/time.h>
+#include <atomic>
+#include <mutex>
 
 using namespace std::chrono_literals;
 
@@ -12,8 +14,9 @@ static cv::Mat _rgb_image(cv::Mat::zeros(cv::Size(640, 480), CV_8UC3));
 static uint16_t * _freenect_depth_pointer = nullptr;
 static uint8_t * _freenect_rgb_pointer = nullptr;
 
-static bool _depth_flag;
-static bool _rgb_flag;
+static std::atomic<bool> _depth_flag{false};
+static std::atomic<bool> _rgb_flag{false};
+static std::mutex _frame_mutex;
 
 KinectRosComponent::KinectRosComponent(const rclcpp::NodeOptions & options)
 : Node("kinect_ros2", options)
@@ -128,7 +131,8 @@ to a new cv::Mat. This way, the callback only used to set a flag that indicates 
 has arrived. The flag is unset when a msg is published */
 void KinectRosComponent::depth_cb(freenect_device * dev, void * depth_ptr, uint32_t timestamp)
 {
-  if (_depth_flag) {
+  std::lock_guard<std::mutex> lock(_frame_mutex);
+  if (_depth_flag.load(std::memory_order_acquire)) {
     return;
   }
 
@@ -137,12 +141,13 @@ void KinectRosComponent::depth_cb(freenect_device * dev, void * depth_ptr, uint3
     _freenect_depth_pointer = (uint16_t *)depth_ptr;
   }
 
-  _depth_flag = true;
+  _depth_flag.store(true, std::memory_order_release);
 }
 
 void KinectRosComponent::rgb_cb(freenect_device * dev, void * rgb_ptr, uint32_t timestamp)
 {
-  if (_rgb_flag) {
+  std::lock_guard<std::mutex> lock(_frame_mutex);
+  if (_rgb_flag.load(std::memory_order_acquire)) {
     return;
   }
 
@@ -151,43 +156,50 @@ void KinectRosComponent::rgb_cb(freenect_device * dev, void * rgb_ptr, uint32_t 
     _freenect_rgb_pointer = (uint8_t *)rgb_ptr;
   }
 
-  _rgb_flag = true;
+  _rgb_flag.store(true, std::memory_order_release);
 }
 
 void KinectRosComponent::timer_callback()
 {
   auto stamp = now();
+  cv::Mat depth_image_copy;
+  cv::Mat rgb_image_copy;
+  sensor_msgs::msg::CameraInfo depth_info_copy;
+  sensor_msgs::msg::CameraInfo rgb_info_copy;
 
-  if (_depth_flag) {
+  {
+    std::lock_guard<std::mutex> lock(_frame_mutex);
+    if (_depth_flag.load(std::memory_order_acquire)) {
+      depth_image_copy = _depth_image.clone();
+      depth_info_copy = depth_info_;
+      _depth_flag.store(false, std::memory_order_release);
+    }
+
+    if (_rgb_flag.load(std::memory_order_acquire)) {
+      rgb_image_copy = _rgb_image.clone();
+      rgb_info_copy = rgb_info_;
+      _rgb_flag.store(false, std::memory_order_release);
+    }
+  }
+
+  if (!depth_image_copy.empty()) {
     auto depth_header = std_msgs::msg::Header();
     depth_header.frame_id = "kinect_depth";
     depth_header.stamp = stamp;
-    depth_info_.header.stamp = stamp;
+    depth_info_copy.header.stamp = stamp;
 
-    //convert 16bit to 8bit mono
-    // cv::Mat depth_8UC1(_depth_image, CV_16UC1);
-    // depth_8UC1.convertTo(depth_8UC1, CV_8UC1);
-
-    auto msg = cv_bridge::CvImage(depth_header, "16UC1", _depth_image).toImageMsg();
-    depth_pub_.publish(*msg, depth_info_);
-
-    // cv::imshow("Depth", _depth_image);
-    // cv::waitKey(1);
-    _depth_flag = false;
+    auto msg = cv_bridge::CvImage(depth_header, "16UC1", depth_image_copy).toImageMsg();
+    depth_pub_.publish(*msg, depth_info_copy);
   }
 
-  if (_rgb_flag) {
+  if (!rgb_image_copy.empty()) {
     auto rgb_header = std_msgs::msg::Header();
     rgb_header.frame_id = "kinect_rgb";
     rgb_header.stamp = stamp;
-    rgb_info_.header.stamp = stamp;
+    rgb_info_copy.header.stamp = stamp;
 
-    auto msg = cv_bridge::CvImage(rgb_header, "rgb8", _rgb_image).toImageMsg();
-    rgb_pub_.publish(*msg, rgb_info_);
-
-    // cv::imshow("RGB", _rgb_image);
-    // cv::waitKey(1);
-    _rgb_flag = false;
+    auto msg = cv_bridge::CvImage(rgb_header, "rgb8", rgb_image_copy).toImageMsg();
+    rgb_pub_.publish(*msg, rgb_info_copy);
   }
 }
 }
