@@ -1,6 +1,9 @@
 #ifndef KINECT_ROS2__KINECT_ROS2_COMPONENT_HPP_
 #define KINECT_ROS2__KINECT_ROS2_COMPONENT_HPP_
 
+#include <atomic>
+#include <thread>
+
 extern "C"
 {
   #include "libfreenect/libfreenect.h"
@@ -34,6 +37,9 @@ private:
   static void rgb_cb(freenect_device * dev, void * rgb_ptr, uint32_t timestamp);
 
   void timer_callback();
+
+  std::atomic_bool running_{false};
+  std::thread freenect_thread_;
 };
 
 }
