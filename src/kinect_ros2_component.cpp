@@ -99,7 +99,7 @@ KinectRosComponent::KinectRosComponent(const rclcpp::NodeOptions & options)
   freenect_thread_ = std::thread([this]() {
     timeval tv;
     tv.tv_sec = 0;
-    tv.tv_usec = 2000;
+    tv.tv_usec = 50000;  // 50 ms sleep to keep libfreenect polling without pegging CPU
     while (running_.load(std::memory_order_relaxed) && rclcpp::ok()) {
       int ret = freenect_process_events_timeout(fn_ctx_, &tv);
       if (ret < 0 && running_.load(std::memory_order_relaxed)) {
