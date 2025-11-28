@@ -21,7 +21,7 @@ static std::mutex _frame_mutex;
 KinectRosComponent::KinectRosComponent(const rclcpp::NodeOptions & options)
 : Node("kinect_ros2", options)
 {
-  timer_ = create_wall_timer(500ms, std::bind(&KinectRosComponent::timer_callback, this));
+  timer_ = create_wall_timer(100ms, std::bind(&KinectRosComponent::timer_callback, this));
   
   std::string pkg_share = ament_index_cpp::get_package_share_directory("kinect_ros2");
 
@@ -99,7 +99,7 @@ KinectRosComponent::KinectRosComponent(const rclcpp::NodeOptions & options)
   freenect_thread_ = std::thread([this]() {
     timeval tv;
     tv.tv_sec = 0;
-    tv.tv_usec = 250000;  // 250 ms sleep to keep libfreenect polling without pegging CPU
+    tv.tv_usec = 50000;  // 250 ms sleep to keep libfreenect polling without pegging CPU
     while (running_.load(std::memory_order_relaxed) && rclcpp::ok()) {
       int ret = freenect_process_events_timeout(fn_ctx_, &tv);
       if (ret < 0 && running_.load(std::memory_order_relaxed)) {
