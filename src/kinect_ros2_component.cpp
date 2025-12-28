@@ -149,6 +149,11 @@ void KinectRosComponent::timer_callback()
   rgb_header.stamp = stamp;
   rgb_info_.header.stamp = stamp;
 
+  // only publish when synchronized
+  if (!(_depth_flag & _rgb_flag)) {
+    return;
+  }
+
   if (_depth_flag) {
     //convert 16bit to 8bit mono
     // cv::Mat depth_8UC1(_depth_image, CV_16UC1);
