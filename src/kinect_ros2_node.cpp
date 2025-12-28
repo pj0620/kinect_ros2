@@ -50,7 +50,7 @@ int main(int argc, char * argv[])
   auto depth_image_proc_component = get_depth_image_proc_component();
 
   exec.add_node(kinect_component);
-  exec.add_node(depth_image_proc_component);
+  // exec.add_node(depth_image_proc_component);
 
   exec.spin();
 
