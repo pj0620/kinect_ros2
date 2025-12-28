@@ -17,7 +17,7 @@ static bool _rgb_flag;
 KinectRosComponent::KinectRosComponent(const rclcpp::NodeOptions & options)
 : Node("kinect_ros2", options)
 {
-  timer_ = create_wall_timer(10ms, std::bind(&KinectRosComponent::timer_callback, this));
+  timer_ = create_wall_timer(1ms, std::bind(&KinectRosComponent::timer_callback, this));
   
   std::string pkg_share = ament_index_cpp::get_package_share_directory("kinect_ros2");
 
@@ -139,22 +139,12 @@ void KinectRosComponent::timer_callback()
   freenect_process_events(fn_ctx_);
   auto stamp = now();
 
-  auto depth_header = std_msgs::msg::Header();
-  depth_header.frame_id = "kinect_depth";
-  depth_header.stamp = stamp;
-  depth_info_.header.stamp = stamp;
-
-  auto rgb_header = std_msgs::msg::Header();
-  rgb_header.frame_id = "kinect_rgb";
-  rgb_header.stamp = stamp;
-  rgb_info_.header.stamp = stamp;
-
-  // only publish when synchronized
-  if (!(_depth_flag & _rgb_flag)) {
-    return;
-  }
-
   if (_depth_flag) {
+    auto depth_header = std_msgs::msg::Header();
+    depth_header.frame_id = "kinect_depth";
+    depth_header.stamp = stamp;
+    depth_info_.header.stamp = stamp;
+
     //convert 16bit to 8bit mono
     // cv::Mat depth_8UC1(_depth_image, CV_16UC1);
     // depth_8UC1.convertTo(depth_8UC1, CV_8UC1);
@@ -168,6 +158,11 @@ void KinectRosComponent::timer_callback()
   }
 
   if (_rgb_flag) {
+    auto rgb_header = std_msgs::msg::Header();
+    rgb_header.frame_id = "kinect_rgb";
+    rgb_header.stamp = stamp;
+    rgb_info_.header.stamp = stamp;
+
     auto msg = cv_bridge::CvImage(rgb_header, "rgb8", _rgb_image).toImageMsg();
     rgb_pub_.publish(*msg, rgb_info_);
 
