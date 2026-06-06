@@ -74,6 +74,13 @@ KinectRosComponent::KinectRosComponent(const rclcpp::NodeOptions & options)
     rclcpp::shutdown();
   }
 
+  ret = freenect_set_video_mode(fn_dev_, freenect_find_video_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_VIDEO_RGB));
+  if (ret < 0) {
+    freenect_shutdown(fn_ctx_);
+    RCLCPP_ERROR(get_logger(), "FREENECT - ERROR SET VIDEO MODE");
+    rclcpp::shutdown();
+  }
+
   freenect_set_depth_callback(fn_dev_, depth_cb);
   freenect_set_video_callback(fn_dev_, rgb_cb);
 
@@ -90,6 +97,8 @@ KinectRosComponent::KinectRosComponent(const rclcpp::NodeOptions & options)
     RCLCPP_ERROR(get_logger(), "FREENECT - ERROR START RGB");
     rclcpp::shutdown();
   }
+
+  RCLCPP_INFO(get_logger(), "Kinect streaming started successfully");
 }
 
 KinectRosComponent::~KinectRosComponent()
@@ -136,7 +145,10 @@ void KinectRosComponent::rgb_cb(freenect_device * dev, void * rgb_ptr, uint32_t 
 
 void KinectRosComponent::timer_callback()
 {
-  freenect_process_events(fn_ctx_);
+  int ret = freenect_process_events(fn_ctx_);
+  if (ret < 0) {
+    RCLCPP_ERROR_THROTTLE(get_logger(), *get_clock(), 5000, "freenect_process_events error: %d", ret);
+  }
   auto stamp = now();
 
   if (_depth_flag) {
