@@ -14,7 +14,7 @@ find_package(ament_index_cpp REQUIRED)
 find_package(rclcpp REQUIRED)
 # find_package(Threads REQUIRED)
 
-find_package(libfreenect REQUIRED)
+find_package(libfreenect REQUIRED HINTS /usr/local/share/libfreenect)
 find_package(OpenCV REQUIRED)
 
 find_package(sensor_msgs REQUIRED)
