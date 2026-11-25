@@ -18,6 +18,7 @@ find_package(libfreenect REQUIRED HINTS /usr/local/share/libfreenect)
 find_package(OpenCV REQUIRED)
 
 find_package(sensor_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 
 find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)

@@ -46,7 +46,16 @@ int main(int argc, char * argv[])
   rclcpp::NodeOptions options;
   options.use_intra_process_comms(true);
 
-  auto kinect_component = std::make_shared<kinect_ros2::KinectRosComponent>(options);
+  std::shared_ptr<kinect_ros2::KinectRosComponent> kinect_component;
+  try {
+    kinect_component = std::make_shared<kinect_ros2::KinectRosComponent>(options);
+  } catch (const std::exception & e) {
+    // no Kinect within device_wait_s, or the device refused: exit non-zero so a launch with
+    // respawn tries again instead of spinning a node without a camera
+    RCLCPP_FATAL(rclcpp::get_logger("kinect_ros2"), "%s", e.what());
+    rclcpp::shutdown();
+    return 1;
+  }
   // auto depth_image_proc_component = get_depth_image_proc_component();
 
   exec.add_node(kinect_component);
